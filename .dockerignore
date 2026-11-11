@@ -1,0 +1,6 @@
+.venv
+.venv-convert
+convert
+tests
+**/__pycache__
+models/*.pth
