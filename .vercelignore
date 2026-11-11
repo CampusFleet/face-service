@@ -1,0 +1,10 @@
+# Not needed at runtime: keeps the Python function bundle small
+.venv*
+.github
+tests
+convert
+models/*.pth
+Dockerfile
+.dockerignore
+**/__pycache__
+.pytest_cache
