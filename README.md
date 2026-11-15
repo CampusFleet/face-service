@@ -28,9 +28,11 @@ Response:
 { "model_version": "yunet2023mar+sface2021dec+minifasnet-v2v1se/1",
   "faces_detected": 1, "accepted": true, "rejection_reasons": [],
   "template": [128 floats, L2-normalised],
-  "quality": { "score": 0.93, "face_px": 222, "sharpness": 3226.3, "yaw_ratio": 0.005, "det_score": 0.95, "passed": true },
+  "quality": { "score": 0.93, "face_px": 222, "sharpness": 3226.3, "yaw_ratio": 0.005, "yaw_signed": -0.005, "det_score": 0.95, "passed": true },
   "pad": { "real_score": 1.0, "passed": true }, "bbox": [x, y, w, h], "elapsed_ms": 61.2 }
 ```
+
+`yaw_ratio` is the unsigned head turn. `yaw_signed` is the same value with a sign: positive when the person turned to their own left. The platform uses it to check the enrollment head-turn challenge.
 
 `rejection_reasons`: `NO_FACE`, `FACE_TOO_SMALL`, `TOO_BLURRY`, `FACE_NOT_FRONTAL`,
 `LOW_DETECTION_CONFIDENCE`, `PRESENTATION_ATTACK_SUSPECTED`.

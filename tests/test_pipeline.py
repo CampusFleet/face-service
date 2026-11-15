@@ -66,3 +66,13 @@ def test_no_face(pipe):
     import numpy as np
     r = pipe.template(np.full((480, 640, 3), 127, dtype=np.uint8))
     assert r.faces_detected == 0 and r.rejection_reasons == ["NO_FACE"] and r.template is None
+
+
+def test_signed_yaw_flips_with_mirrored_image(pipe):
+    """Mirroring the image swaps the turn direction; the unsigned ratio stays the same."""
+    img = cv2.imread(os.path.join(GOLDEN, "obama_a.jpg"))
+    a = pipe.template(img, run_pad=False).quality
+    b = pipe.template(cv2.flip(img, 1), run_pad=False).quality
+    assert abs(a.yaw_ratio - abs(a.yaw_signed)) < 1e-3
+    if abs(a.yaw_signed) > 0.02:  # needs a visible turn to compare signs
+        assert (a.yaw_signed > 0) != (b.yaw_signed > 0)

@@ -38,6 +38,10 @@ class Quality:
     det_score: float
     passed: bool
     reasons: list[str] = field(default_factory=list)
+    # Signed head turn, same measure as yaw_ratio. Positive = the subject turned to their own LEFT
+    # (nose toward the right edge of the unmirrored image). Lets the platform check the
+    # enrollment challenge side; yaw_ratio stays unsigned for compatibility.
+    yaw_signed: float = 0.0
 
     @property
     def score(self) -> float:
@@ -108,7 +112,8 @@ class FacePipeline:
         x, y, fw, fh = face[:4]
         rx, ry, lx, ly, nx, ny = face[4:10]  # right eye, left eye, nose
         eye_dist = max(1e-6, float(np.hypot(lx - rx, ly - ry)))
-        yaw_ratio = abs(float(nx) - (float(rx) + float(lx)) / 2) / eye_dist
+        yaw_signed = (float(nx) - (float(rx) + float(lx)) / 2) / eye_dist
+        yaw_ratio = abs(yaw_signed)
         sharp = float(cv2.Laplacian(cv2.cvtColor(aligned, cv2.COLOR_BGR2GRAY), cv2.CV_64F).var())
         face_px = int(min(fw, fh))
         det = float(face[14])
@@ -121,7 +126,7 @@ class FacePipeline:
             reasons.append("FACE_NOT_FRONTAL")
         if det < MIN_DET_SCORE:
             reasons.append("LOW_DETECTION_CONFIDENCE")
-        return Quality(face_px, round(sharp, 2), round(yaw_ratio, 4), round(det, 4), not reasons, reasons)
+        return Quality(face_px, round(sharp, 2), round(yaw_ratio, 4), round(det, 4), not reasons, reasons, round(yaw_signed, 4))
 
     # ── presentation attack detection ────────────────────────────────────
     @staticmethod

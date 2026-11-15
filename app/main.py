@@ -18,6 +18,7 @@ import time
 import uuid
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 
 from . import auth
@@ -71,7 +72,8 @@ async def template(request: Request):
 
     run_pad = request.query_params.get("pad", "true").lower() != "false"
     t0 = time.perf_counter()
-    result = pipeline.template(img, run_pad=run_pad)
+    # CPU-bound ONNX/OpenCV work runs in a worker thread so other requests are not blocked.
+    result = await run_in_threadpool(pipeline.template, img, run_pad)
     ms = round((time.perf_counter() - t0) * 1000, 1)
     log.info(
         "template request_id=%s faces=%d accepted=%s reasons=%s ms=%s",
@@ -88,7 +90,7 @@ async def template(request: Request):
             "template": result.template,
             "quality": None if q is None else {
                 "score": q.score, "face_px": q.face_px, "sharpness": q.sharpness,
-                "yaw_ratio": q.yaw_ratio, "det_score": q.det_score, "passed": q.passed,
+                "yaw_ratio": q.yaw_ratio, "yaw_signed": q.yaw_signed, "det_score": q.det_score, "passed": q.passed,
             },
             "pad": None if p is None else {"real_score": p.real_score, "passed": p.passed},
             "bbox": result.bbox,
