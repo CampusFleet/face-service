@@ -6,7 +6,7 @@ designated reviewer is recorded at the bottom before the pilot starts.
 | Purpose | Model | Version / file | Source | Licence | SHA-256 |
 |---|---|---|---|---|---|
 | Face detection + 5 landmarks | YuNet | `face_detection_yunet_2023mar.onnx` | [opencv_zoo/face_detection_yunet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) | MIT ("All files in this directory are licensed under MIT License") | `8f2383e4…99bec0` |
-| Face recognition (128-d) | SFace | `face_recognition_sface_2021dec.onnx` | [opencv_zoo/face_recognition_sface](https://github.com/opencv/opencv_zoo/tree/main/models/face_recognition_sface) | Apache-2.0 | `0ba9fbfa…4e79` |
+| Face recognition (512-d) | AuraFace v1 (ResNet100, ArcFace loss) | `auraface_glintr100.onnx` (upstream `glintr100.onnx`) | [fal/AuraFace-v1](https://huggingface.co/fal/AuraFace-v1) | Apache-2.0 (trained on commercially licensed data) | `a7933ea5…5c60` |
 | Passive anti-spoofing (PAD) | MiniFASNetV2, scale 2.7, 80×80 | `2.7_80x80_MiniFASNetV2.onnx` (converted from `.pth`) | [minivision-ai/Silent-Face-Anti-Spoofing](https://github.com/minivision-ai/Silent-Face-Anti-Spoofing) | Apache-2.0 (repo `LICENSE`) | `1cb86b65…94419` |
 | Passive anti-spoofing (PAD) | MiniFASNetV1SE, scale 4.0, 80×80 | `4_0_0_80x80_MiniFASNetV1SE.onnx` (converted from `.pth`) | same | Apache-2.0 | `0a4539e3…a978a9` |
 

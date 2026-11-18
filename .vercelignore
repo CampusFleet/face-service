@@ -10,3 +10,4 @@ Dockerfile
 .pytest_cache
 # Local secrets: never upload
 .env*
+models/face_recognition_sface_2021dec.onnx

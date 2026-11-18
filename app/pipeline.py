@@ -1,5 +1,8 @@
 """
-Face pipeline: detect (YuNet) → quality gate → 5-point alignment + template (SFace) → passive PAD (MiniFASNet).
+Face pipeline: detect (YuNet) → quality gate → 5-point ArcFace alignment + 512-d template (AuraFace)
+→ passive PAD (MiniFASNet).
+AuraFace v1 (fal, Apache-2.0, ResNet100 / ArcFace loss) replaced SFace (2021, 128-d): it is far more
+robust to glasses, pose and lighting. Templates of the two models are not comparable.
 
 All models are licence-clean (MIT / Apache-2.0, see docs/biometrics/models.md) and run on CPU.
 """
@@ -13,8 +16,14 @@ import cv2
 import numpy as np
 import onnxruntime as ort
 
-MODEL_VERSION = "yunet2023mar+sface2021dec+minifasnet-v2v1se/1"
-TEMPLATE_DIM = 128
+MODEL_VERSION = "yunet2023mar+auraface-v1+minifasnet-v2v1se/1"
+TEMPLATE_DIM = 512
+RECOGNIZER_FILE = "auraface_glintr100.onnx"
+# ArcFace reference landmarks for a 112x112 crop: image-left eye, image-right eye, nose, mouth corners.
+# YuNet returns its 5 points in the same order.
+ARCFACE_DST = np.array(
+    [[38.2946, 51.6963], [73.5318, 51.5014], [56.0252, 71.7366], [41.5493, 92.3655], [70.7299, 92.2041]], dtype=np.float32
+)
 
 # Quality thresholds (tuned conservatively; recalibrate in Task 11)
 MIN_FACE_PX = int(os.getenv("FACE_MIN_SIZE_PX", "80"))          # shorter side of the face box
@@ -88,15 +97,32 @@ class FacePipeline:
             os.path.join(models_dir, "face_detection_yunet_2023mar.onnx"), "", (320, 320),
             score_threshold=0.6, nms_threshold=0.3, top_k=50,
         )
-        self.recognizer = cv2.FaceRecognizerSF.create(
-            os.path.join(models_dir, "face_recognition_sface_2021dec.onnx"), ""
-        )
         opts = ort.SessionOptions()
         opts.intra_op_num_threads = 1
+        rec_opts = ort.SessionOptions()
+        rec_opts.intra_op_num_threads = int(os.getenv("FACE_REC_THREADS", "2"))
+        self.recognizer = ort.InferenceSession(os.path.join(models_dir, RECOGNIZER_FILE), rec_opts, providers=["CPUExecutionProvider"])
+        self._rec_input = self.recognizer.get_inputs()[0].name
         self.pad_sessions = [
             (ort.InferenceSession(os.path.join(models_dir, f), opts, providers=["CPUExecutionProvider"]), scale)
             for f, scale in PAD_MODELS
         ]
+
+    # ── alignment + embedding (AuraFace / ArcFace convention) ─────────────
+    @staticmethod
+    def align(img: np.ndarray, face: np.ndarray) -> np.ndarray:
+        """Similarity transform of the 5 YuNet landmarks onto the ArcFace template → 112x112 BGR crop."""
+        src = np.asarray(face[4:14], dtype=np.float32).reshape(5, 2)
+        m, _ = cv2.estimateAffinePartial2D(src, ARCFACE_DST, method=cv2.LMEDS)
+        if m is None:
+            x, y, w, h = [float(v) for v in face[:4]]
+            return cv2.resize(img[max(0, int(y)): int(y + h), max(0, int(x)): int(x + w)], (112, 112))
+        return cv2.warpAffine(img, m, (112, 112), borderMode=cv2.BORDER_REPLICATE)
+
+    def embed(self, aligned_bgr: np.ndarray) -> np.ndarray:
+        rgb = cv2.cvtColor(aligned_bgr, cv2.COLOR_BGR2RGB).astype(np.float32)
+        x = ((rgb - 127.5) / 127.5).transpose(2, 0, 1)[None]
+        return self.recognizer.run(None, {self._rec_input: x})[0][0].astype(np.float64)
 
     # ── detection ─────────────────────────────────────────────────────────
     def detect(self, img: np.ndarray) -> np.ndarray:
@@ -166,9 +192,8 @@ class FacePipeline:
             return TemplateResult(0, None, None, None, None)
         # Largest face = the person at the door / in front of the enrollment camera
         face = max(faces, key=lambda f: f[2] * f[3])
-        with self._lock:
-            aligned = self.recognizer.alignCrop(img, face)
-            feat = self.recognizer.feature(aligned).flatten().astype(np.float64)
+        aligned = self.align(img, face)
+        feat = self.embed(aligned)
         norm = np.linalg.norm(feat)
         template = (feat / norm).round(6).tolist() if norm > 1e-9 else None
         quality = self._quality(face, aligned)

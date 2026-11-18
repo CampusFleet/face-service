@@ -1,6 +1,6 @@
 # CampusFleet face service
 
-Stateless Python service that turns one face image into a 128-d template plus quality and
+Stateless Python service that turns one face image into a 512-d AuraFace template plus quality and
 anti-spoofing scores. It never stores images or templates. Model sources, licences and checksums: [`MODELS.md`](MODELS.md).
 
 Part of CampusFleet Face ID boarding:
@@ -25,9 +25,9 @@ The client is `src/lib/face/client.ts` in `platform`. If you change this format,
 Response:
 
 ```json
-{ "model_version": "yunet2023mar+sface2021dec+minifasnet-v2v1se/1",
+{ "model_version": "yunet2023mar+auraface-v1+minifasnet-v2v1se/1",
   "faces_detected": 1, "accepted": true, "rejection_reasons": [],
-  "template": [128 floats, L2-normalised],
+  "template": [512 floats, L2-normalised],
   "quality": { "score": 0.93, "face_px": 222, "sharpness": 3226.3, "yaw_ratio": 0.005, "yaw_signed": -0.005, "det_score": 0.95, "passed": true },
   "pad": { "real_score": 1.0, "passed": true }, "bbox": [x, y, w, h], "elapsed_ms": 61.2 }
 ```

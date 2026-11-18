@@ -38,7 +38,7 @@ def test_template_ok():
     r = signed_post(jpg("obama_a.jpg"))
     assert r.status_code == 200
     j = r.json()
-    assert j["accepted"] and len(j["template"]) == 128 and j["quality"]["passed"] and j["pad"]["passed"]
+    assert j["accepted"] and len(j["template"]) == 512 and j["quality"]["passed"] and j["pad"]["passed"]
 
 
 def test_spoof_reported():
