@@ -18,7 +18,7 @@ import onnxruntime as ort
 
 MODEL_VERSION = "yunet2023mar+auraface-v1+minifasnet-v2v1se/1"
 TEMPLATE_DIM = 512
-RECOGNIZER_FILE = "auraface_glintr100.onnx"
+RECOGNIZER_FILE = "auraface/model.onnx"  # weights stored as fp16, computed in fp32 (convert/auraface_fp16_weights.py)
 # ArcFace reference landmarks for a 112x112 crop: image-left eye, image-right eye, nose, mouth corners.
 # YuNet returns its 5 points in the same order.
 ARCFACE_DST = np.array(

@@ -11,3 +11,5 @@ Dockerfile
 # Local secrets: never upload
 .env*
 models/face_recognition_sface_2021dec.onnx
+models/auraface_glintr100.onnx
+models/auraface_glintr100_fp16w.onnx

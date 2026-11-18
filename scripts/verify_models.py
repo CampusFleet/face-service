@@ -35,7 +35,8 @@ def verify(models_dir: str, required_only: bool = False) -> list[str]:
 
 
 if __name__ == "__main__":
-    d = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "..", "models")
+    paths = [a for a in sys.argv[1:] if not a.startswith("--")]
+    d = paths[0] if paths else os.path.join(os.path.dirname(__file__), "..", "models")
     errs = verify(d, required_only="--runtime" in sys.argv)
     for e in errs:
         print("FAIL", e)
